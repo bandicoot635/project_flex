@@ -6,6 +6,17 @@ const bcryptjs = require('bcryptjs')
 
 const usersGet = async (req = request, res = response) => {
 
+    const { idusuario } = req.body
+
+    if (idusuario) {
+
+        const usuario = await Usuario.findOne({ where: { idusuario } })
+        return res.status(200).json({
+            msg: 'Consulta exitosa',
+            usuario
+        })
+    }
+
     const usuarios = await Usuario.findAll()
 
     res.status(200).json({
@@ -99,7 +110,7 @@ const usersPut = async (req = request, res = response) => {
         if (estado) {
             return res.status(400).json('Aqui no se puede actulizar el estado')
         }
-    
+
         //Actualizar usuario
         await Usuario.update({
             ...resto  // los campos a actualizar que manden

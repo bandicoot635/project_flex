@@ -1,7 +1,9 @@
 const { response, request } = require('express')
-const { generarJsonWebToken } = require('../helpers/generate-JWT')
+const { generarJsonWebToken, refreshJsonWebToken } = require('../helpers/generate-JWT')
 const Usuario = require('../models/usuarios')
+const Token = require('../models/tokens')
 const bcryptjs = require('bcryptjs')
+const jwt = require('jsonwebtoken');
 
 const authUsers = async (req = request, res = response) => {
 
@@ -42,11 +44,33 @@ const authUsers = async (req = request, res = response) => {
         }
 
         //Generar json web token
-        const token = await generarJsonWebToken(usuario.idusuario)
+        const token = await generarJsonWebToken(usuario.idusuario)// Duracion 15 minutos
+
+        const tokenRefresh = await refreshJsonWebToken(usuario.idusuario) //Duracion 7 dias
+        // console.log(tokenRefresh);
+
+        // const decoded = jwt.decode(tokenRefresh, { complete: true });
+        // const expiry = decoded.payload.exp;
+        // console.log("El token expira el:", new Date(expiry * 1000).toUTCString())
+
+        const { exp } = jwt.decode(tokenRefresh, { complete: true });
+        console.log("El token expira el:", new Date(exp * 1000).toUTCString())
+        
+
+
+        // Aqui se debe de guardar el token de actualizacion
+        const tokenRefreshData = new Token({
+            user_id: usuario.idusuario,
+            refresh_token: tokenRefresh,
+            expires_at: exp
+        })
+
+        await tokenRefreshData.save()
+
 
         res.json({
             msg: `Usuario ${usuario.nombre} autenticado correctamente`,
-            token    //Se manda el token
+            token    //Se manda token principal
         })
 
     } catch (error) {

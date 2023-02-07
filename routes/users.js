@@ -1,7 +1,7 @@
 const { Router } = require('express');
 
 //Middlewares
-const { validarJWT } = require('../middlewares/validate-JWT');
+const { validarJWT, actualizarToken } = require('../middlewares/validate-JWT');
 const { validarCampos } = require('../middlewares/validate-campos');
 const { isAdminRol } = require('../middlewares/validate-roles');
 const { passwordSeguro } = require('../middlewares/validate-password');
@@ -16,6 +16,7 @@ const router = Router();
 
 router.get('/', [
     validarJWT
+    // actualizarToken
 ], usersGet)
 
 router.post('/', [
