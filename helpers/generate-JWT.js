@@ -8,7 +8,7 @@ const generarJsonWebToken = (idusuario = '') => {
         const payload = { idusuario };
 
         jwt.sign(payload, process.env.FIRMAJWT, {
-            expiresIn: '1hr'
+            expiresIn: '8hr'
         }, (err, token) => {
             if (err) {
                 console.log(err);

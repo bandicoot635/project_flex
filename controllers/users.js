@@ -6,12 +6,46 @@ const bcryptjs = require('bcryptjs')
 
 const usersGet = async (req = request, res = response) => {
 
-    const usuarios = await Usuario.findAll()
 
-    res.status(200).json({
-        msg: 'Consulta exitosa',
-        usuarios
-    })
+    const { idusuario } = req.body
+
+    try {
+
+        if (idusuario) {
+
+            const usuario = await Usuario.findOne({ where: { idusuario } })
+
+            //Validar que exista
+            if (!usuario) {
+                return res.status(404).json({
+                    error: `El usuario ${idusuario} no existe`,
+                })
+            }
+
+            return res.status(200).json({
+                msg: 'Consulta exitosa',
+                usuario
+            })
+
+        }
+
+        const usuarios = await Usuario.findAll()
+
+        res.status(200).json({
+            msg: 'Consulta exitosa',
+            usuarios
+        })
+
+    } catch (error) {
+
+        console.log(error);
+        res.status(500).json({
+            error: error.message,
+            msg: 'Error en el servidor'
+        })
+
+    }
+
 }
 
 
@@ -99,7 +133,13 @@ const usersPut = async (req = request, res = response) => {
         if (estado) {
             return res.status(400).json('Aqui no se puede actulizar el estado')
         }
-    
+
+        if(Object.keys(resto).length === 0){
+            return res.status(400).json({
+                error: `No se recibieron parametros para actulizar`
+            })
+        }
+
         //Actualizar usuario
         await Usuario.update({
             ...resto  // los campos a actualizar que manden

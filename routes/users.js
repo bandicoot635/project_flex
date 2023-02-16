@@ -15,7 +15,8 @@ const { usersGet, usersPost, usersDelete, usersPut } = require('../controllers/u
 const router = Router();
 
 router.get('/', [
-    validarJWT
+    validarJWT,
+    isAdminRol
 ], usersGet)
 
 router.post('/', [
@@ -61,6 +62,7 @@ router.delete('/', [
     validarJWT,
     isAdminRol,
     check('idusuario', 'Tienes que enviar el ID del usuario a eliminar').notEmpty(),
+    validarCampos
 ], usersDelete)
 
 

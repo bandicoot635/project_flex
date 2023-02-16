@@ -12,6 +12,9 @@ const Rol = sequelize.define('Rol', {
     },
     level: {
         type: DataTypes.INTEGER,
+    },
+    area:{
+        type: DataTypes.STRING
     }
     
 })
