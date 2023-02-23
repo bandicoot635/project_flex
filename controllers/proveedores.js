@@ -5,7 +5,7 @@ const Provider = require('../models/proveedores')
 const proveedoresGet = async (req = request, res = response) => {
 
 
-    const { id_proveedor } = req.body
+    const { id_proveedor } = req.query
 
     try {
 
@@ -27,7 +27,11 @@ const proveedoresGet = async (req = request, res = response) => {
 
         }
 
-        const proveedores = await Provider.findAll()
+        const proveedores = await Provider.findAll({
+            where: {
+                estado: true
+            }
+        })
 
         res.status(200).json({
             msg: 'Consulta exitosa',
@@ -108,6 +112,13 @@ const proveedoresPut = async (req = request, res = response) => {
             })
         }
 
+        //Validar que no este eliminado
+        if (!provedor.estatus) {
+            return res.status(404).json({
+                error: `No existe un proveedor con el id ${id_proveedor} (eliminado)`
+            })
+        }
+
         if (estado) {
             return res.status(400).json('Aqui no se puede actulizar el estado')
         }
@@ -155,6 +166,13 @@ const proveedoresDelete = async (req = request, res = response) => {
         if (!provedor) {
             return res.status(404).json({
                 error: `No existe un proveedor con el id ${id_proveedor}`
+            })
+        }
+
+        //Validar que no este eliminado
+        if (!provedor.estatus) {
+            return res.status(404).json({
+                error: `No existe un proveedor con el id ${id_proveedor} (eliminado)`
             })
         }
 

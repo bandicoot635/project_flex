@@ -26,6 +26,7 @@ router.post('/', [
 router.put('/', [
     validarJWT,
     isAdminRol,
+    check('id_proveedor', 'Tienes que enviar el ID del proveedor a actulizar').notEmpty(),
     check('RFC').optional().matches(/^[A-Z&Ñ]{3,4}(\d{2})(0[1-9]|1[0-2])(0[1-9]|[1-2]\d|3[0-1])[A-Z\d]{3}$/).withMessage('Ingresa un RFC valido'),
     validarCampos
 ], proveedoresPut)

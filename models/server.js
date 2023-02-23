@@ -15,7 +15,10 @@ class Server {
         this.usersPath = '/api/users'
         this.products  = '/api/products'
         this.compras = '/api/compras'
+        
         this.proveedores = '/api/proveedores'
+        this.mermas = '/api/mermas'
+        this.insumos = '/api/insumos'
         
         this.middlewares()
 
@@ -50,11 +53,13 @@ class Server {
         this.app.use(this.usersPath, require('../routes/users'))
         this.app.use(this.loginPath, require('../routes/auth'))
         this.app.use(this.products, require('../routes/products'))
-        this.app.use(this.compras, require('../routes/compras'))
+        this.app.use(this.compras, require('../routes/compras')),
         this.app.use(this.proveedores, require('../routes/proveedores'))
+        this.app.use(this.mermas, require('../routes/mermas'))
+        this.app.use(this.insumos, require('../routes/insumos'))
     }
 
-    listen() {
+    listen() { 
         this.app.listen(this.port, () => {
             console.log('servidor corriendo en el puerto', this.port);
         })

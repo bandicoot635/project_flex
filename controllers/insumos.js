@@ -1,8 +1,10 @@
 const { response, request } = require('express')
-const Product = require('../models/products')
+//Modelos
+const Insumo = require('../models/insumos');
+//Importaciones de terceros
 
 
-const productsGet = async (req = request, res = response) => {
+const insumosGet = async (req = request, res = response) => {
 
     const { codigo_barras, id_proveedor } = req.query
 
@@ -10,37 +12,37 @@ const productsGet = async (req = request, res = response) => {
 
         if (codigo_barras) {
 
-            const product = await Product.findOne({ where: { codigo_barras } })
+            const insumo = await Insumo.findOne({ where: { codigo_barras } })
 
-            if (!product) {
+            if (!insumo) {
                 return res.status(404).json({
-                    error: `No existe Producto con el codigo de barras ${codigo_barras}`,
+                    error: `No existe insumo con codigo de barras ${codigo_barras}`,
                 })
             }
 
             return res.status(200).json({
                 msg: 'Consulta exitosa',
-                product
+                insumo
             })
         }
 
         if (id_proveedor) {
 
-            const products = await Product.findAll({ where: { id_proveedor, estado: true  } })
+            const insumos = await Insumo.findAll({ where: { id_proveedor } })
 
-            if (products.length === 0) {
+            if (!insumos) {
                 return res.status(404).json({
-                    error: `No existe producto con el proveedor ${id_proveedor}`,
+                    error: `No existe insumo con el proveedor ${id_proveedor}`,
                 })
             }
 
             return res.status(200).json({
                 msg: 'Consulta exitosa',
-                products
+                insumos
             })
         }
 
-        const products = await Product.findAll({
+        const insumos = await Insumo.findAll({
             where: {
                 estado: true
             }
@@ -48,86 +50,78 @@ const productsGet = async (req = request, res = response) => {
 
         res.status(200).json({
             msg: 'Consulta exitosa',
-            products
+            insumos
         })
 
     } catch (error) {
-
         console.log(error);
         res.status(500).json({
             error: error.message,
             msg: 'Error en el servidor'
         })
-
     }
-
 }
 
-const productsPost = async (req = request, res = response) => {
 
+const insumosPost = async (req = request, res = response) => {
 
     const {
         nombre,
-        precio_venta,
-        precio_compra,
-        tamanio,
         codigo_barras,
+        precio_compra,
+        unidad_medida,
         id_proveedor,
         id_departamento,
     } = req.body
 
     try {
 
-        const product = new Product({
+        const insumo = new Insumo({
             nombre,
-            precio_venta,
-            precio_compra,
             codigo_barras,
-            tamanio,
+            precio_compra,
+            unidad_medida,
             id_proveedor,
             id_departamento,
         })
 
 
-        await product.save()
+        await insumo.save()
 
         res.status(200).json({
-            msg: 'Producto guardado correctamente',
-            product
+            msg: 'Insumo guardado correctamente',
+            insumo
         })
 
 
     } catch (error) {
-
         console.log(error);
         res.status(500).json({
             error: error.message,
             msg: 'Error en el servidor'
         })
-
     }
 }
 
-
-const productsPut = async (req = request, res = response) => {
+const insumosPut = async (req = request, res = response) => {
 
     const { codigo_barras, estado, stock, ...resto } = req.body
 
     try {
 
-         //Validar que el codigo de barras exista
-        const producto = await Product.findOne({ where: { codigo_barras } })
+        //Validar que el codigo de barras exista
+        const insumo = await Insumo.findOne({ where: { codigo_barras } })
 
-        if (!producto) {
+        if (!insumo) {
             return res.status(404).json({
-                error: `No existe un producto con el codigo de barras ${codigo_barras}`
+                error: `No existe un insumo con el codigo de barras ${codigo_barras}`
             })
         }
 
         //Validar que no este eliminado
-        if (!producto.estatus) {
+        if (!insumo.estatus) {
             return res.status(404).json({
-                error: `No existe un producto con el codigo de barras ${codigo_barras} (eliminado)`
+                error: `No existe un insumo con el codigo de barras ${codigo_barras} (eliminado)`
             })
         }
 
@@ -146,12 +140,12 @@ const productsPut = async (req = request, res = response) => {
             })
         }
 
-        //Actualizar prodcucto
-        await Product.update({
-            ...resto  // los campos a actualizar que manden
+        //Actualizar insumo
+        await Insumo.update({
+            ...resto  //Campos a actualizar
         }, {
             where: {
-                codigo_barras  // el id a buscar
+                codigo_barras
             },
         })
 
@@ -167,56 +161,50 @@ const productsPut = async (req = request, res = response) => {
             msg: 'Error en el servidor'
         })
     }
-
 }
 
-const productsDelete = async (req = request, res = response) => {
+const insumosDelete = async (req = request, res = response) => {
 
     const { codigo_barras } = req.body;
 
     try {
 
-        const product = await Product.findOne({ where: { codigo_barras } })
+        const insumo = await Insumo.findOne({ where: { codigo_barras } })
 
-        //Validar que exista el producto a eliminar
-        if (!product) {
-            return res.status(400).json({
-                error: 'El producto que desea eliminar no existe',
+        //Validar que exista el insumo a eliminar
+        if (!insumo) {
+            return res.status(404).json({
+                error: 'El insumo que desea eliminar no existe',
             })
         }
 
-        //Validar que el producto no este eliminado
-        if (!product.estado) {
+        //Validar que el insumo no este eliminado
+        if (!insumo.estado) {
             return res.status(400).json({
-                error: 'El producto que desea eliminar ya habia sido eliminado',
+                error: 'El insumo que desea eliminar ya habia sido eliminado',
             })
         }
 
-
-        //Eliminacion logica del producto
-        await Product.update({ estado: false }, {
+        //Eliminacion logica del insumo
+        await Insumo.update({ estado: false }, {
             where: { codigo_barras }
         });
 
 
-        res.status(200).json(`El producto ${product.nombre} ha sido elimnado`)
+        res.status(200).json(`El insumo ${insumo.nombre} ha sido elimnado`)
 
     } catch (error) {
-
         console.log(error);
         res.status(500).json({
             error: error.message,
             msg: 'Error en el servidor'
         })
-
     }
-
-
 }
 
 module.exports = {
-    productsGet,
-    productsPost,
-    productsPut,
-    productsDelete
+    insumosGet,
+    insumosPost,
+    insumosPut,
+    insumosDelete
 };

@@ -1,101 +1,138 @@
 const { response, request } = require('express')
 const Product = require('../models/products')
+const Insumo = require('../models/insumos')
 const Compra = require('../models/compras')
 const Entrada = require('../models/entradas');
 const { Sequelize } = require('sequelize');
+const { validarExistenciaProductos, validarExistenciaInsumos } = require('../helpers/db-validate');
 
-
-const comprasPost = async (req = request, res = response) => {
-
-
-    // const productos = req.body.productos;
-    const { CFDI, productos } = req.body;
+const comprasGet = async (req = request, res = response) => {
 
     try {
 
-        //Sacar el idsusuario
+        const compras = await Compra.findAll()
+
+        res.status(200).json({
+            msg: 'Consulta exitosa',
+            compras
+        })
+
+    } catch (error) {
+
+        console.log(error);
+        res.status(500).json({
+            error: error.message,
+            msg: 'Error en el servidor'
+        })
+
+    }
+}
+
+const comprasPost = async (req = request, res = response) => {
+
+    // const productos = req.body.productos;
+    const { CFDI, subtotal_compra, total_compra, productos } = req.body;
+
+    console.log(typeof subtotal_compra);
+    try {
+
+        //Obtener el usuario
         const id_usuario = req.usuario.idusuario
 
-        //Validar que no este vacio y que sea un array
-        if (!Array.isArray(productos) && productos.length === 0) {
-            return res.status(400).json({
-                error: 'El parámetro productos debe ser un arreglo y no estar vacio'
-            });
+
+        //Validar que sea adquisición de mercancías.
+        if (CFDI === 'G01') {
+
+
+            //Validar que los codigos de barras del array existan
+            try {
+                await validarExistenciaProductos(productos)
+            } catch (error) {
+                return res.status(400).json({
+                    error: error.message
+                });
+            }
+
+
+            //Aumentar el stock en la tabla correspondiente
+            for (const producto of productos) {
+                const { codigo_barras, cantidad_ingresada } = producto;
+
+                const [updated] = await Product.update({
+                    stock: Sequelize.literal(`stock + ${cantidad_ingresada}`)
+                }, {
+                    where: {
+                        codigo_barras
+                    }
+                });
+
+                if (!updated) {
+                    throw new Error(
+                        `No se pudo actualizar el stock del producto con el codigo de barras ${codigo_barras}`
+                    );
+                }
+            }
+
+            //Se inserta a la tabla entradas
+            for (const producto of productos) {
+                const { codigo_barras, cantidad_ingresada, fecha_caducidad } = producto;
+
+                await Entrada.create({
+                    id_usuario,
+                    codigo_barras,
+                    cantidad_ingresada,
+                    fecha_caducidad
+                });
+            }
         }
 
-        //Validar que los codigos de barra del array existan
-        for (const producto of productos) {
+        //Validar que san gastos.
+        if (CFDI === 'G03') {
 
-            const count = await Product.count({
-                where: { codigo_barras: producto.codigo_barras },
-            });
-
-            if (count === 0) {
+            try {
+                await validarExistenciaInsumos(productos)
+            } catch (error) {
                 return res.status(400).json({
-                    error: `El producto con codigo de barras ${producto.codigo_barras} no existe en la base de datos`
+                    error: error.message
+                });
+            }
+
+            //Aumentar el stock en la tabla correspondiente
+            for (const insumo of productos) {
+                const { codigo_barras, cantidad_ingresada } = insumo;
+
+                const [updated] = await Insumo.update({
+                    stock: Sequelize.literal(`stock + ${cantidad_ingresada}`)
+                }, {
+                    where: {
+                        codigo_barras
+                    }
+                });
+
+                if (!updated) {
+                    throw new Error(
+                        `No se pudo actualizar el stock del producto con el codigo de barras ${codigo_barras}`
+                    );
+                }
+            }
+
+            //Se inserta a la tabla entradas
+            for (const insumo of productos) {
+                const { codigo_barras, cantidad_ingresada, fecha_caducidad } = insumo;
+
+                await Entrada.create({
+                    id_usuario,
+                    codigo_barras,
+                    cantidad_ingresada,
+                    fecha_caducidad
                 });
             }
         }
 
         //Obtener el total de productos
-        const total_productos = productos.reduce((acumulador, producto) => {
-            return acumulador + producto.cantidad_ingresada;
+        const total_productos = productos.reduce((acumulador, insumo) => {
+            return acumulador + insumo.cantidad_ingresada;
         }, 0);
-
-
-        //Se obtienen los precios de compra de la bd
-        const precios = await Product.findAll({
-            where: {
-                codigo_barras: {
-                    [Sequelize.Op.in]: productos.map(p => p.codigo_barras)
-                }
-            },
-            attributes: ['codigo_barras', 'precioCompra']
-        });
-
-        // console.log(precios);
-
-
-        //Calcular total de la compra (piezas totales * precio de compra)
-        const subtotal_compra = productos.reduce((acumulador, producto) => {
-            const precio_producto = precios.find(p => p.codigo_barras === producto.codigo_barras).precioCompra;
-            return acumulador + (precio_producto * producto.cantidad_ingresada);
-        }, 0);
-
-        // console.log(total_productos, total_compra);
-
-        //Aumentar el stock en la tabla correspondiente
-        for (const producto of productos) {
-            const { codigo_barras, cantidad_ingresada } = producto;
-
-            const [updated] = await Product.update({
-                stock: Sequelize.literal(`stock + ${cantidad_ingresada}`)
-            }, {
-                where: {
-                    codigo_barras
-                }
-            });
-
-            if (!updated) {
-                throw new Error(
-                    `No se pudo actualizar el stock del producto con id ${codigo_barras}`
-                );
-            }
-        }
-
-        //Se inserta a la tabla entradas
-        for (const producto of productos) {
-            const { codigo_barras, cantidad_ingresada, fecha_caducidad } = producto;
-
-            await Entrada.create({
-                id_usuario,
-                codigo_barras,
-                cantidad_ingresada,
-                fecha_caducidad
-            });
-        }
-
-        const total_compra = subtotal_compra * (1 +  0.16)
 
         const compra = new Compra({
             id_usuario,
@@ -106,8 +143,6 @@ const comprasPost = async (req = request, res = response) => {
         })
 
         await compra.save()
-
-
 
 
         res.status(200).json({
@@ -128,8 +163,7 @@ const comprasPost = async (req = request, res = response) => {
 }
 
 
-
-
 module.exports = {
+    comprasGet,
     comprasPost
 };

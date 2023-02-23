@@ -1,28 +1,25 @@
 const { DataTypes } = require('sequelize')
 const sequelize = require('../database/connection')
 
-const Entrada = sequelize.define('Entrada', {
+const Merma = sequelize.define('Merma', {
 
-    id_entrada: {
+    id_merma: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true,
     },
-    codigo_barras:{
-        type: DataTypes.INTEGER,
-    },
-    id_insumo:{
-        type: DataTypes.STRING,
-    },
     id_usuario:{
         type: DataTypes.STRING,
     },
-    cantidad_ingresada: {
+    id_producto:{
         type: DataTypes.INTEGER,
     },
-    fecha_caducidad: {
-        type: DataTypes.DATE,
-    }
+    cantidad: {
+        type: DataTypes.INTEGER,
+    },
+    motivo:{
+        type: DataTypes.STRING,
+    },
 })
 
-module.exports = Entrada;
+module.exports = Merma;

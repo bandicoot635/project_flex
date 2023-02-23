@@ -1,5 +1,6 @@
 const { response, request } = require('express')
 const Usuario = require('../models/usuarios')
+//Importaciones de terceros
 const { v4: uuidv4, validate } = require('uuid');
 const bcryptjs = require('bcryptjs')
 
@@ -7,7 +8,7 @@ const bcryptjs = require('bcryptjs')
 const usersGet = async (req = request, res = response) => {
 
 
-    const { idusuario } = req.body
+    const { idusuario } = req.query
 
     try {
 
@@ -29,7 +30,11 @@ const usersGet = async (req = request, res = response) => {
 
         }
 
-        const usuarios = await Usuario.findAll()
+        const usuarios = await Usuario.findAll({
+            where: {
+                estado: true
+            }
+        })
 
         res.status(200).json({
             msg: 'Consulta exitosa',
@@ -117,12 +122,19 @@ const usersPut = async (req = request, res = response) => {
 
         //Validar si el id existe
         const usuario = await Usuario.findOne({ where: { idusuario } })
+
         if (!usuario) {
             return res.status(404).json({
                 error: `No existe un usurio con el id ${idusuario}`
             })
         }
 
+        //Validar que no este eliminado
+        if (!usuario.estatus) {
+            return res.status(404).json({
+                error: `No existe un usuario con el id ${idusuario} (eliminado)`
+            })
+        }
 
         if (password) {
             //Encriptar el password
@@ -134,7 +146,7 @@ const usersPut = async (req = request, res = response) => {
             return res.status(400).json('Aqui no se puede actulizar el estado')
         }
 
-        if(Object.keys(resto).length === 0){
+        if (Object.keys(resto).length === 0) {
             return res.status(400).json({
                 error: `No se recibieron parametros para actulizar`
             })
@@ -144,7 +156,9 @@ const usersPut = async (req = request, res = response) => {
         await Usuario.update({
             ...resto  // los campos a actualizar que manden
         }, {
-            where: { idusuario }, // el id a buscar
+            where: {
+                idusuario // el id a buscar
+            }
             // returning: true,
         })
 
@@ -177,7 +191,6 @@ const usersDelete = async (req = request, res = response) => {
             return res.status(400).json({ error: 'ID invalido' });
         }
 
-        //Busca el usuario a elminar por id
         const usuario = await Usuario.findOne({ where: { idusuario } })
 
         //Validar que exista el usuario a eliminar
@@ -187,9 +200,18 @@ const usersDelete = async (req = request, res = response) => {
             })
         }
 
+        //Validar que no este eliminado
+        if (!usuario.estatus) {
+            return res.status(404).json({
+                error: `No existe un usuario con el id ${idusuario} (eliminado)`
+            })
+        }
+
         //Eliminacion logica del usuario
         await Usuario.update({ estado: false }, {
-            where: { idusuario }
+            where: {
+                idusuario
+            }
         });
 
 

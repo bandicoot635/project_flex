@@ -46,6 +46,7 @@ router.put('/', [
     isAdminRol,
     isEmail,
     passwordSeguro,
+    check('idusuario', 'Tienes que enviar el ID del usuario a actulizar').notEmpty(),
     check('nombre').optional().matches(/^[a-zA-Z]+$/).withMessage('No es un nombre valido'),
     check('apellidoPaterno', 'No es un apellido valido').optional().matches(/^[a-zA-Z]+$/),
     check('apellidoMaterno', 'No es un apellido valido').optional().matches(/^[a-zA-Z]+$/),

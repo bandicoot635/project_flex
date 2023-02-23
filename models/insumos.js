@@ -1,10 +1,10 @@
 const { DataTypes } = require('sequelize')
 const sequelize = require('../database/connection')
 
-const Product = sequelize.define('Product', {
+const Insumo = sequelize.define('Insumo', {
 
-    idproducto: {
-        type: DataTypes.STRING,
+    id_insumo: {
+        type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true,
     },
@@ -14,18 +14,15 @@ const Product = sequelize.define('Product', {
     codigo_barras: {
         type: DataTypes.STRING,
     },
-    precio_venta: {
-        type: DataTypes.DECIMAL,
-    },
     precio_compra: {
         type: DataTypes.DECIMAL,
+    },
+    unidad_medida: {
+        type: DataTypes.STRING,
     },
     stock: {
         type: DataTypes.INTEGER,
         defaultValue: 0
-    },
-    tamanio: {
-        type: DataTypes.STRING,
     },
     estado: {
         type: DataTypes.BOOLEAN,
@@ -39,4 +36,4 @@ const Product = sequelize.define('Product', {
     }
 })
 
-module.exports = Product;
+module.exports = Insumo;
