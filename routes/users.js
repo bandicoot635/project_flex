@@ -3,7 +3,7 @@ const { Router } = require('express');
 //Middlewares
 const { validarJWT } = require('../middlewares/validate-JWT');
 const { validarCampos } = require('../middlewares/validate-campos');
-const { isAdminRol } = require('../middlewares/validate-roles');
+const { tieneRol } = require('../middlewares/validate-roles');
 const { passwordSeguro } = require('../middlewares/validate-password');
 const { isEmail } = require('../middlewares/validate-email');
 const { check } = require('express-validator');
@@ -11,22 +11,20 @@ const { check } = require('express-validator');
 //Helpers
 const { isRolValido, isEmailValido, isCelularValido, isUsernameValido } = require('../helpers/db-validate');
 
-const { usersGet, usersPost, usersDelete, usersPut } = require('../controllers/users');
+const { usersGet, usersPost, usersDelete, usersPut, passwordPut } = require('../controllers/users');
 const router = Router();
 
 router.get('/', [
     validarJWT,
-    isAdminRol
+     tieneRol('ADMIN'),
 ], usersGet)
 
 router.post('/', [
     validarJWT,
-    isAdminRol,
+    tieneRol('ADMIN'),
     isEmail,
-    passwordSeguro,
     check('nombre', 'El nombre es obligario').notEmpty(),
-    check('nombre', 'No es un nombre valido').matches(/^[a-zA-Z]+$/),
-    check('password', 'La contraseña es obligaria').notEmpty(),
+    check('nombre', 'No es un nombre valido').matches(/^[a-zA-Z ]+$/),
     check('apellidoPaterno', 'Los apellidos son obligatorios').notEmpty(),
     check('apellidoPaterno', 'No es un apellido valido').matches(/^[a-zA-Z]+$/),
     check('apellidoMaterno', 'Los apellidos son obligatorios').notEmpty(),
@@ -43,11 +41,10 @@ router.post('/', [
 
 router.put('/', [
     validarJWT,
-    isAdminRol,
+    tieneRol('ADMIN'),
     isEmail,
-    passwordSeguro,
     check('idusuario', 'Tienes que enviar el ID del usuario a actulizar').notEmpty(),
-    check('nombre').optional().matches(/^[a-zA-Z]+$/).withMessage('No es un nombre valido'),
+    check('nombre').optional().matches(/^[a-zA-Z ]+$/).withMessage('No es un nombre valido'),
     check('apellidoPaterno', 'No es un apellido valido').optional().matches(/^[a-zA-Z]+$/),
     check('apellidoMaterno', 'No es un apellido valido').optional().matches(/^[a-zA-Z]+$/),
     check('idrol').optional().custom(isRolValido),
@@ -59,9 +56,17 @@ router.put('/', [
     validarCampos
 ], usersPut)
 
+router.put('/password', [
+    validarJWT,
+    tieneRol('ADMIN', 'SUPER', 'VENTAS'),
+    check('password', 'La contraseña es obligaria').notEmpty(),
+    passwordSeguro,
+    validarCampos
+], passwordPut)
+
 router.delete('/', [
     validarJWT,
-    isAdminRol,
+    tieneRol('ADMIN'),
     check('idusuario', 'Tienes que enviar el ID del usuario a eliminar').notEmpty(),
     validarCampos
 ], usersDelete)

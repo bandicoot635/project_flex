@@ -38,6 +38,10 @@ const Usuario = sequelize.define('Usuario', {
     email: {
         type: DataTypes.STRING,
     },
+    password_temporary: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
+    },
 
 })
 

@@ -1,7 +1,7 @@
 const { response, request } = require('express')
 const Provider = require('../models/proveedores')
 
-
+ 
 const proveedoresGet = async (req = request, res = response) => {
 
 
